@@ -1,4 +1,4 @@
-# Circle-of-Fifths-
+# Circle-of-Fifths
 
 ## Tool
 
