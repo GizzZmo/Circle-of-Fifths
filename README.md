@@ -140,7 +140,8 @@ For questions, suggestions, or feedback, please open an issue on GitHub.
 
 **Note**: This tool is under active development. Features and documentation will be expanded as the project evolves.
 
-# Circle-=======of-Fifths
+# Circle-of-Fifths
+
 
 ## Tool
 
