@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaktiv Kvintsirkel & Akkordfinner</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --highlight-major: #4dabf7;
+            --highlight-minor: #ff8787;
+            --dim-color: #444;
+            --circle-bg: #2d2d2d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 { margin-bottom: 10px; }
+        p { color: #888; margin-bottom: 30px; }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* --- CIRCLE STYLES --- */
+        .circle-wrapper {
+            position: relative;
+            width: 360px;
+            height: 360px;
+        }
+
+        .circle-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 2px solid #555;
+            background: var(--circle-bg);
+            z-index: 1;
+        }
+
+        .note-item {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+            user-select: none;
+        }
+
+        .note-item:hover {
+            transform: scale(1.2);
+            background-color: #555;
+        }
+
+        /* Outer Circle (Major) */
+        .major-note { font-size: 1.1em; color: #fff; }
+        
+        /* Inner Circle (Minor) */
+        .minor-note { font-size: 0.9em; color: #aaa; }
+
+        /* Selection Indicator (The Wedge) */
+        .wedge {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            border-style: solid;
+            border-width: 160px 60px 0 60px; /* shape */
+            border-color: rgba(255, 255, 255, 0.05) transparent transparent transparent;
+            transform-origin: 50% 0; /* Rotate from center */
+            pointer-events: none;
+            z-index: 2;
+            transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        /* --- INFO PANEL --- */
+        .info-panel {
+            background: #252525;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            min-width: 300px;
+        }
+
+        .current-key {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        
+        .chord-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .chord-box {
+            background: #333;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-left: 4px solid transparent;
+            transition: background 0.2s;
+        }
+
+        .chord-function { font-size: 0.8em; color: #888; text-transform: uppercase; letter-spacing: 1px;}
+        .chord-roman { font-weight: bold; font-size: 1.1em; margin-bottom: 2px; }
+        .chord-name { font-size: 1.4em; }
+
+        /* Dynamic Colors */
+        .is-major { border-left-color: var(--highlight-major); }
+        .is-minor { border-left-color: var(--highlight-minor); }
+
+        .active-note {
+            background-color: #fff;
+            color: #000;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        
+        .neighbor-note {
+            background-color: #444;
+            color: #fff;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Interaktiv Kvintsirkel</h1>
+    <p>Klikk på en Dur-akkord (ytterste ring) for å velge toneart og se analysen.</p>
+
+    <div class="container">
+        
+        <div class="circle-wrapper" id="circleWrapper">
+            <div class="circle-bg"></div>
+            <div class="wedge" id="wedge"></div>
+            </div>
+
+        <div class="info-panel">
+            <div class="current-key">Toneart: <span id="keyName" style="color:var(--highlight-major)">C</span> Major</div>
+            
+            <div class="chord-grid">
+                <div class="chord-box is-major">
+                    <span class="chord-function">Tonika</span>
+                    <span class="chord-roman">I</span>
+                    <span class="chord-name" id="chord-I">-</span>
+                </div>
+                <div class="chord-box is-major">
+                    <span class="chord-function">Subdominant</span>
+                    <span class="chord-roman">IV</span>
+                    <span class="chord-name" id="chord-IV">-</span>
+                </div>
+                <div class="chord-box is-major">
+                    <span class="chord-function">Dominant</span>
+                    <span class="chord-roman">V</span>
+                    <span class="chord-name" id="chord-V">-</span>
+                </div>
+
+                <div class="chord-box is-minor">
+                    <span class="chord-function">Parallell</span>
+                    <span class="chord-roman">vi</span>
+                    <span class="chord-name" id="chord-vi">-</span>
+                </div>
+                <div class="chord-box is-minor">
+                    <span class="chord-function">Supertonika</span>
+                    <span class="chord-roman">ii</span>
+                    <span class="chord-name" id="chord-ii">-</span>
+                </div>
+                <div class="chord-box is-minor">
+                    <span class="chord-function">Mediant</span>
+                    <span class="chord-roman">iii</span>
+                    <span class="chord-name" id="chord-iii">-</span>
+                </div>
+            </div>
+            
+            <div style="margin-top:20px; font-size:0.85em; color:#666; text-align:center;">
+                * Dim-akkorden (vii°) er ikke inkludert i standardvisningen, men den er alltid en halvtone under I.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data definitions
+        // Ordered by Circle of Fifths (Clockwise)
+        const outerNotes = ["C", "G", "D", "A", "E", "B", "Gb", "Db", "Ab", "Eb", "Bb", "F"];
+        const innerNotes = ["Am", "Em", "Bm", "F#m", "C#m", "G#m", "Ebm", "Bbm", "Fm", "Cm", "Gm", "Dm"];
+        
+        // Configuration for drawing
+        const radiusOuter = 150;
+        const radiusInner = 105;
+        const center = 180; // Half of circle wrapper size
+        let currentIndex = 0; // Starts at C
+
+        const wrapper = document.getElementById('circleWrapper');
+        const wedge = document.getElementById('wedge');
+
+        // Initial setup
+        function init() {
+            renderCircle();
+            updateDashboard(0);
+        }
+
+        function renderCircle() {
+            // Determine angle step (360 / 12 = 30 degrees)
+            const step = (2 * Math.PI) / 12;
+
+            // Use -90 degrees ( -PI/2 ) offset so index 0 (C) is at the TOP (12 o'clock)
+            const offset = -Math.PI / 2; 
+
+            // Create Outer Ring (Major)
+            outerNotes.forEach((note, index) => {
+                createNoteElement(note, index, radiusOuter, step, offset, 'major-note', index);
+            });
+
+            // Create Inner Ring (Minor)
+            innerNotes.forEach((note, index) => {
+                createNoteElement(note, index, radiusInner, step, offset, 'minor-note', index);
+            });
+        }
+
+        function createNoteElement(text, index, radius, step, offset, className, dataIndex) {
+            const el = document.createElement('div');
+            el.className = `note-item ${className}`;
+            el.innerText = text;
+            el.dataset.index = dataIndex;
+
+            // Calculate x, y position
+            // x = r * cos(angle), y = r * sin(angle)
+            const angle = (index * step) + offset;
+            const x = center + radius * Math.cos(angle) - 25; // -25 to center the 50px div
+            const y = center + radius * Math.sin(angle) - 25;
+
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+
+            // Add click event
+            el.onclick = () => {
+                updateDashboard(dataIndex);
+            };
+
+            // Store ref for later updates if needed
+            el.id = `${className}-${index}`;
+
+            wrapper.appendChild(el);
+        }
+
+        // Helper to handle array wrapping (e.g. index -1 becomes 11)
+        function getWrappedIndex(i) {
+            return (i + 12) % 12;
+        }
+
+        function updateDashboard(index) {
+            currentIndex = index;
+
+            // 1. Rotate the visual wedge
+            // Each step is 30deg. 
+            const rotation = index * 30;
+            wedge.style.transform = `rotate(${rotation}deg)`;
+
+            // 2. Identify the neighbors (The 6 chords)
+            const i_idx = index;                    // I
+            const iv_idx = getWrappedIndex(index - 1); // IV (Left)
+            const v_idx = getWrappedIndex(index + 1);  // V (Right)
+            
+            // Inner circle indices match outer circle indices for relative positions
+            const vi_idx = index;                   // vi (Relative minor)
+            const ii_idx = getWrappedIndex(index - 1); // ii (Supertonic)
+            const iii_idx = getWrappedIndex(index + 1); // iii (Mediant)
+
+            // 3. Update Text
+            document.getElementById('keyName').innerText = outerNotes[i_idx];
+
+            document.getElementById('chord-I').innerText = outerNotes[i_idx];
+            document.getElementById('chord-IV').innerText = outerNotes[iv_idx];
+            document.getElementById('chord-V').innerText = outerNotes[v_idx];
+
+            document.getElementById('chord-vi').innerText = innerNotes[vi_idx];
+            document.getElementById('chord-ii').innerText = innerNotes[ii_idx];
+            document.getElementById('chord-iii').innerText = innerNotes[iii_idx];
+
+            // 4. Highlight active notes on the circle
+            // Reset all highlights
+            document.querySelectorAll('.note-item').forEach(el => {
+                el.classList.remove('active-note', 'neighbor-note');
+                el.style.opacity = "0.5"; // Dim others
+            });
+
+            // Highlight Logic
+            const highlight = (id, type) => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.classList.add(type);
+                    el.style.opacity = "1";
+                }
+            };
+
+            // Highlight Selected (I)
+            highlight(`major-note-${i_idx}`, 'active-note');
+            
+            // Highlight Neighbors
+            highlight(`major-note-${iv_idx}`, 'neighbor-note'); // IV
+            highlight(`major-note-${v_idx}`, 'neighbor-note');  // V
+            highlight(`minor-note-${vi_idx}`, 'neighbor-note'); // vi
+            highlight(`minor-note-${ii_idx}`, 'neighbor-note'); // ii
+            highlight(`minor-note-${iii_idx}`, 'neighbor-note'); // iii
+        }
+
+        // Run
+        init();
+
+    </script>
+</body>
+</html>
